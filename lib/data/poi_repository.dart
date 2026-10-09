@@ -10,6 +10,12 @@ import 'package:sqflite/sqflite.dart';
 import '../models/poi.dart';
 
 class PoiRepository {
+  PoiRepository({this.databaseOpener});
+
+  // An injected opener lets tests cover both a healthy empty DB and a failed
+  // DB open without depending on the bundled production asset.
+  final Future<Database?> Function()? databaseOpener;
+
   static const _fallback = <Poi>[
     Poi(
       id: 'tokyo-park',
@@ -73,6 +79,7 @@ class PoiRepository {
   Future<Database?>? _openingDatabase;
 
   Future<Database?> _openDatabase() async {
+    if (databaseOpener case final open?) return open();
     if (_database != null) return _database;
     if (_openingDatabase != null) return _openingDatabase;
     _openingDatabase = _openDatabaseOnce();
@@ -138,7 +145,9 @@ class PoiRepository {
               longitude + longitudeDelta,
             ],
           );
-    final source = rows.isEmpty ? _fallback : rows.map(Poi.fromRow).toList();
+    // A healthy database returning zero rows is an authoritative empty result.
+    // Only an unavailable database may use bundled fallback suggestions.
+    final source = database == null ? _fallback : rows.map(Poi.fromRow).toList();
     return source
         .where((poi) => !indoorOnly || poi.isIndoor)
         .where(
