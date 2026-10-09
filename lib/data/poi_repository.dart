@@ -10,12 +10,11 @@ import 'package:sqflite/sqflite.dart';
 import '../models/poi.dart';
 
 class PoiRepository {
-  PoiRepository({Future<Database?> Function()? databaseOpener})
-      : _databaseOpener = databaseOpener;
+  PoiRepository({this.databaseOpener});
 
   // An injected opener lets tests cover both a healthy empty DB and a failed
   // DB open without depending on the bundled production asset.
-  final Future<Database?> Function()? _databaseOpener;
+  final Future<Database?> Function()? databaseOpener;
 
   static const _fallback = <Poi>[
     Poi(
@@ -80,7 +79,7 @@ class PoiRepository {
   Future<Database?>? _openingDatabase;
 
   Future<Database?> _openDatabase() async {
-    if (_databaseOpener case final open?) return open();
+    if (databaseOpener case final open?) return open();
     if (_database != null) return _database;
     if (_openingDatabase != null) return _openingDatabase;
     _openingDatabase = _openDatabaseOnce();
